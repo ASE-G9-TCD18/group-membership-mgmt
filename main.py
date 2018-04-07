@@ -88,42 +88,44 @@ if not args.isCoordinator:
         client.close()
     
     # Request for initial MEMBERSHIP_VIEW
-    mem_view_msg = json.dumps({'topic':'GIVE_MEMBERSHIP_VIEW'})
-    client = client_socket.ClientSocket()
-    client.sendMessage(port = args.coordinatorPort ,message = mem_view_msg.encode('utf-8'));
-    view_of_membership = client.recvMessage(4096)
-    view_of_membership = json.loads(view_of_membership)
-    
-    # insert the view of membership in the database
-    doc = collection.find_one()
-    doc['viewOfMembership'] = view_of_membership['viewOfMembership']
-    utils.insertIfNotPresent(collection, doc)
-    client.close()
-    
-    
+    # mem_view_msg = json.dumps({'topic':'GIVE_MEMBERSHIP_VIEW'})
+    # client = client_socket.ClientSocket()
+    # client.sendMessage(port = args.coordinatorPort ,message = mem_view_msg.encode('utf-8'));
+    # view_of_membership = client.recvMessage(4096)
+    # view_of_membership = json.loads(view_of_membership)
+    #
+    # # insert the view of membership in the database
+    # doc = collection.find_one()
+    # doc['viewOfMembership'] = view_of_membership['viewOfMembership']
+    # utils.insertIfNotPresent(collection, doc)
+    # client.close()
+
+
+
     while True:
         j = 0
         doc = collection.find_one()
-        
+
         # Iterate over each member in the list and send a PING request to check
         # their alive status.
         # Update membership view accordingly
         print("\n\nPinging all nodes to update membership view...")
+        print(doc['viewOfMembership'])
         for member in doc['viewOfMembership']:
             member_port = member['address']
-            
+
             if(member_port != args.port):
                 client = client_socket.ClientSocket()
                 alive_status_msg = {'topic':'PING'}
-                
-                isSuccessSend = client.sendMessage(port = member_port, 
+
+                isSuccessSend = client.sendMessage(port = member_port,
                                                    message = json.dumps(alive_status_msg).encode('utf-8'));
                 if not isSuccessSend:
                     member['isMember'] = False
                 mem_resp = client.recvMessage(4096)
                 doc['viewOfMembership'][j] = member
                 j += 1
-                
+
                 print(member)
                 client.close()
 

@@ -13,6 +13,7 @@ import socket
 import threading
 import json
 import traceback
+import client_socket
 
 class ServerSocket(threading.Thread):
     
@@ -37,6 +38,8 @@ class ServerSocket(threading.Thread):
         
         dbConn = model.PyMongoModel()
         self.collection = dbConn.getCollection("process_"+str(port))
+
+        self.port = port
     
     def run(self):
          # initiate listening
@@ -48,7 +51,7 @@ class ServerSocket(threading.Thread):
             clientsocket = None
             try:
                 # establish a connection
-                clientsocket,addr = self.server_socket.accept()      
+                clientsocket,addr = self.server_socket.accept()
             
                 print("Got a connection from %s" % str(addr))
                 msg = clientsocket.recv(4096)
@@ -96,14 +99,93 @@ class ServerSocket(threading.Thread):
                         doc = self.collection.insert_one(doc)
                     
                     # send a key
-                    clientsocket.send((json.dumps({"topic":'APPROVED', "key":key}))
-                    .encode('utf-8'))
-                    
+                    # client_socket.send((json.dumps({"topic":'APPROVED', "key":key})).encode('utf-8'))
+
+
+
+                    # Update membership view of other membership
+                    # ----------------------------------------------------------------
+                    # dbConn = model.PyMongoModel()
+
+                    # j = 0
+                    # collection_server = dbConn.getCollection("process_" + str(self.port))
+                    # doc_server = self.collection.find_one()
+                    # for member in doc_server['viewOfMembership']:
+                    #     member_port = member['address']
+                    #     collection_member = dbConn.getCollection("process_" + str(member_port))
+                    #     doc_member = collection_member.find_one()
+                    #
+                    #     if (member_port != self.port):
+                    #         client = client_socket.ClientSocket()
+                    #         doc_member = doc_server
+                    #
+                    #         # doc['viewOfMembership'][j] = member
+                    #         # j += 1
+                    #         # collection.update({'_id': doc['_id']}, doc)
+                    #         print(member)
+                    #         client.close()
+
+                    #
+                    # client = client_socket.ClientSocket()
+                    # # client.sendMessage()
+                    # update_mem_view = json.dumps({'topic':'MEMBERSHIP_UPDATE', 'address':args.port})
+                    # client.sendMessage(port=self.port, message=update_mem_view.encode('utf-8'));
+                    # ----------------------------------------------------------------
+
+                    # Iterate over each member in the list and send a PING request to check
+                    # their alive status.
+                    # Update membership view accordingly
+                    print("\n\nBroadcasting updated membership...")
+                    doc = self.collection.find_one()
+                    for member in doc['viewOfMembership']:
+                        print("Inside the view")
+                        member_port = member['address']
+                        print("Member port:", member_port)
+                        print("Coordinator port:", self.port)
+
+                        if (member_port != self.port):
+                            print("not self port ",self.port)
+                            client = client_socket.ClientSocket()
+                            # alive_status_msg = {'topic': 'PING'}
+                            updatedview = json.dumps({'topic':'MEMBERSHIP_UPDATE', 'message':{'viewOfMembership': doc['viewOfMembership']}}).encode('utf-8')
+                            print("-----",updatedview)
+                            isSuccessSend = client.sendMessage(port=member_port,
+                                                               message= updatedview)
+                            client.close()
+                        print(isSuccessSend)
+
+                        print(member)
+                    clientsocket.send((json.dumps({"topic": 'APPROVED', "key": key}))
+                                          .encode('utf-8'))
+
+
+
+
+
                 # check type of message received and perform corressponding action
+                elif topic == 'MEMBERSHIP_UPDATE':
+                    print("----Inside Membership update")
+                    # mem_view_msg = json.dumps({'topic': 'MEMBERSHIP_UPDATE', 'message'})
+                    # client = client_socket.ClientSocket()
+                    # client.sendMessage(port=args.coordinatorPort, message=mem_view_msg.encode('utf-8'));
+                    print("Updated recieved:" ,recvd_msg['message']['viewOfMembership'])
+                    print("printing ",self.collection.find_one())
+                    # doc = self.collection.find_one()
+                    print ("----",doc['viewOfMembership'])
+                    # if doc is not None:
+                    #     self.collection.delete_one({"_id": doc["_id"]});
+
+                    doc['viewOfMembership'] = recvd_msg['message']['viewOfMembership']
+                    print("jhadsgfjaksdh",doc['viewOfMembership'])
+
+                    utils.insertIfNotPresent(self.collection, doc)
+                    # client.close()
+
+
                 elif topic == 'GIVE_MEMBERSHIP_VIEW':
                     # query for membership view
                     doc = self.collection.find_one()
-                   
+
                     # send membership view
                     clientsocket.send((json.dumps({'viewOfMembership':doc['viewOfMembership']}))
                     .encode('utf-8'))
