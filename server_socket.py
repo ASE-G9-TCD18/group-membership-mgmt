@@ -14,6 +14,7 @@ import threading
 import json
 import traceback
 import client_socket
+import utils
 
 class ServerSocket(threading.Thread):
     
@@ -79,6 +80,7 @@ class ServerSocket(threading.Thread):
                     
                     key = utils.getKey();
                     doc = self.collection.find_one()
+                    print('Inside req', doc)
 
                     
                     # if view of membership is already created
@@ -164,22 +166,34 @@ class ServerSocket(threading.Thread):
 
                 # check type of message received and perform corressponding action
                 elif topic == 'MEMBERSHIP_UPDATE':
-                    print("----Inside Membership update")
-                    # mem_view_msg = json.dumps({'topic': 'MEMBERSHIP_UPDATE', 'message'})
-                    # client = client_socket.ClientSocket()
-                    # client.sendMessage(port=args.coordinatorPort, message=mem_view_msg.encode('utf-8'));
-                    print("Updated recieved:" ,recvd_msg['message']['viewOfMembership'])
-                    print("printing ",self.collection.find_one())
-                    # doc = self.collection.find_one()
-                    print ("----",doc['viewOfMembership'])
-                    # if doc is not None:
-                    #     self.collection.delete_one({"_id": doc["_id"]});
-
+                    # print("----1. Inside Membership update")
+                    # # mem_view_msg = json.dumps({'topic': 'MEMBERSHIP_UPDATE', 'message'})
+                    # # client = client_socket.ClientSocket()
+                    # # client.sendMessage(port=args.coordinatorPort, message=mem_view_msg.encode('utf-8'));
+                    # print("2. Updated recieved:" ,recvd_msg['message']['viewOfMembership'])
+                    # # print("3. printing ", self.collection.find_one())
+                    # # print("3.1 sub part:", self.collection.find_one({"viewOfMembership": {"address":client_addr}}))
+                    # doc1 = self.collection.find_one()
+                    # print ("4.", doc1['viewOfMembership'])
+                    # # if doc is not None:
+                    # #     self.collection.delete_one({"_id": doc["_id"]});
+                    #
+                    # doc1 = recvd_msg['message']['viewOfMembership']
+                    # print("3.",doc1)
+                    #
+                    # utils.insertIfNotPresent(self.collection, doc1)
+                    # # client.close()
+                    dbConn = model.PyMongoModel()
+                    collection = dbConn.getCollection("process_10000")
+                    doc = collection.find_one()
+                    if doc is None:
+                        doc = {}
                     doc['viewOfMembership'] = recvd_msg['message']['viewOfMembership']
-                    print("jhadsgfjaksdh",doc['viewOfMembership'])
+                    print("Recieved View of membership:",doc['viewOfMembership'])
+                    print("My old view:",self.collection("process_11000"))
 
-                    utils.insertIfNotPresent(self.collection, doc)
-                    # client.close()
+                    utils.insertIfNotPresent(self.collection, doc['viewOfMembership'])
+                    print("My new view:",self.collection)
 
 
                 elif topic == 'GIVE_MEMBERSHIP_VIEW':
@@ -193,6 +207,7 @@ class ServerSocket(threading.Thread):
                 
                        
             except Exception as ex:
+                print("ERROR: Exception caught on server Trying traceback Now")
                 traceback.print_tb(ex.__traceback__)
                 print("ERROR: Exception caught on server")
                 
