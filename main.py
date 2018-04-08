@@ -119,22 +119,22 @@ if not args.isCoordinator:
             for member in doc['viewOfMembership']:
                 member_port = member['address']
 
-                if(member_port != args.port):
-                    client = client_socket.ClientSocket()
-                    alive_status_msg = {'topic':'PING'}
+                # if(member_port != args.port):
+                client = client_socket.ClientSocket()
+                alive_status_msg = {'topic':'PING'}
 
-                    isSuccessSend = client.sendMessage(port = member_port,
-                                                       message = json.dumps(alive_status_msg).encode('utf-8'));
-                    if not isSuccessSend:
-                        member['isMember'] = False
-                    mem_resp = client.recvMessage(4096)
-                    doc['viewOfMembership'][j] = member
-                    j += 1
+                isSuccessSend = client.sendMessage(port = member_port,
+                                                   message = json.dumps(alive_status_msg).encode('utf-8'));
+                if not isSuccessSend:
+                    member['isMember'] = False
+                mem_resp = client.recvMessage(4096)
+                doc['viewOfMembership'][j] = member
+                j += 1
 
-                    print(member)
-                    client.close()
+                print(member)
+                client.close()
 
-                collection.update({'_id':doc['_id']},doc)
+            collection.update({'_id':doc['_id']},doc)
         time.sleep(5)
         
 # update the membership view

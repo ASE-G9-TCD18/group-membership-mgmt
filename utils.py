@@ -13,7 +13,7 @@ def insertIfNotPresent(collection, doc):
     if '_id' in doc :
         doc = collection.update({'_id':doc['_id']}, doc)
     else:
-       doc = collection.insert_one(doc) 
+       doc = collection.insert_one(doc)
        
     return doc
 
