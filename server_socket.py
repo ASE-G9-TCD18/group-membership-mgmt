@@ -146,7 +146,6 @@ class ServerSocket(threading.Thread):
                         print("Coordinator port:", self.port)
 
                         if (member_port != self.port):
-                            print("not self port ",self.port)
                             client = client_socket.ClientSocket()
                             # alive_status_msg = {'topic': 'PING'}
                             updatedview = json.dumps({'topic':'MEMBERSHIP_UPDATE', 'message':{'viewOfMembership': doc['viewOfMembership']}}).encode('utf-8')
@@ -166,34 +165,36 @@ class ServerSocket(threading.Thread):
 
                 # check type of message received and perform corressponding action
                 elif topic == 'MEMBERSHIP_UPDATE':
-                    # print("----1. Inside Membership update")
-                    # # mem_view_msg = json.dumps({'topic': 'MEMBERSHIP_UPDATE', 'message'})
-                    # # client = client_socket.ClientSocket()
-                    # # client.sendMessage(port=args.coordinatorPort, message=mem_view_msg.encode('utf-8'));
-                    # print("2. Updated recieved:" ,recvd_msg['message']['viewOfMembership'])
-                    # # print("3. printing ", self.collection.find_one())
-                    # # print("3.1 sub part:", self.collection.find_one({"viewOfMembership": {"address":client_addr}}))
+
+                    print("----1. Inside Membership update")
+                    # mem_view_msg = json.dumps({'topic': 'MEMBERSHIP_UPDATE', 'message'})
+                    # client = client_socket.ClientSocket()
+                    # client.sendMessage(port=args.coordinatorPort, message=mem_view_msg.encode('utf-8'));
+                    print("2. Updated recieved:" ,recvd_msg['message'])
+                    # print("3. printing ", self.collection.find_one())
+                    # print("3.1 sub part:", self.collection.find_one({"viewOfMembership": {"address":client_addr}}))
                     # doc1 = self.collection.find_one()
                     # print ("4.", doc1['viewOfMembership'])
-                    # # if doc is not None:
-                    # #     self.collection.delete_one({"_id": doc["_id"]});
-                    #
-                    # doc1 = recvd_msg['message']['viewOfMembership']
-                    # print("3.",doc1)
-                    #
-                    # utils.insertIfNotPresent(self.collection, doc1)
-                    # # client.close()
-                    dbConn = model.PyMongoModel()
-                    collection = dbConn.getCollection("process_10000")
-                    doc = collection.find_one()
-                    if doc is None:
-                        doc = {}
-                    doc['viewOfMembership'] = recvd_msg['message']['viewOfMembership']
-                    print("Recieved View of membership:",doc['viewOfMembership'])
-                    print("My old view:",self.collection("process_11000"))
+                    # if doc is not None:
+                    #     self.collection.delete_one({"_id": doc["_id"]});
+                    doc1 = {'viewOfMembership':[{""}]}
 
-                    utils.insertIfNotPresent(self.collection, doc['viewOfMembership'])
-                    print("My new view:",self.collection)
+                    doc1['viewOfMembership'] = recvd_msg['message']['viewOfMembership']
+                    print("3.", doc1)
+
+                    utils.insertIfNotPresent(self.collection, doc1)
+                    # # client.close()
+
+                    # doc = self.collection.find_one()
+                    # if doc is None:
+                    #     doc = {}
+                    # print("*******Recieved View of membership:", recvd_msg['message']['viewOfMembership'])
+                    # doc['viewOfMembership'] = recvd_msg['message']['viewOfMembership']
+                    # print("*******Recieved View of membership:",doc['viewOfMembership'])
+                    # # print("My old view:",self.collection("process_"))
+                    #
+                    # utils.insertIfNotPresent(self.collection, doc['viewOfMembership'])
+                    # print("My new view:",self.collection)
 
 
                 elif topic == 'GIVE_MEMBERSHIP_VIEW':
