@@ -127,14 +127,18 @@ if not args.isCoordinator:
                                                    message = json.dumps(alive_status_msg).encode('utf-8'));
                 if not isSuccessSend:
                     member['isMember'] = False
-                mem_resp = client.recvMessage(4096)
-                doc['viewOfMembership'][j] = member
-                j += 1
+                    collection.update({}, {'$pull': { 'viewOfMembership':{'address': member_port}}}, True)
+                    print('removing the disconnected node on port ', member_port)
+
+                # else:
+                #     mem_resp = client.recvMessage(4096)
+                #     doc['viewOfMembership'][j] = member
+                #     j += 1
 
                 print(member)
                 client.close()
 
-            collection.update({'_id':doc['_id']},doc)
+            # collection.update({'_id':doc['_id']},doc)
         time.sleep(5)
         
 # update the membership view
