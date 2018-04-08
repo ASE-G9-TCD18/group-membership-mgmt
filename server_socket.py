@@ -102,41 +102,6 @@ class ServerSocket(threading.Thread):
                     
                     # send a key
                     # client_socket.send((json.dumps({"topic":'APPROVED', "key":key})).encode('utf-8'))
-
-
-
-                    # Update membership view of other membership
-                    # ----------------------------------------------------------------
-                    # dbConn = model.PyMongoModel()
-
-                    # j = 0
-                    # collection_server = dbConn.getCollection("process_" + str(self.port))
-                    # doc_server = self.collection.find_one()
-                    # for member in doc_server['viewOfMembership']:
-                    #     member_port = member['address']
-                    #     collection_member = dbConn.getCollection("process_" + str(member_port))
-                    #     doc_member = collection_member.find_one()
-                    #
-                    #     if (member_port != self.port):
-                    #         client = client_socket.ClientSocket()
-                    #         doc_member = doc_server
-                    #
-                    #         # doc['viewOfMembership'][j] = member
-                    #         # j += 1
-                    #         # collection.update({'_id': doc['_id']}, doc)
-                    #         print(member)
-                    #         client.close()
-
-                    #
-                    # client = client_socket.ClientSocket()
-                    # # client.sendMessage()
-                    # update_mem_view = json.dumps({'topic':'MEMBERSHIP_UPDATE', 'address':args.port})
-                    # client.sendMessage(port=self.port, message=update_mem_view.encode('utf-8'));
-                    # ----------------------------------------------------------------
-
-                    # Iterate over each member in the list and send a PING request to check
-                    # their alive status.
-                    # Update membership view accordingly
                     print("\n\nBroadcasting updated membership...")
                     doc = self.collection.find_one()
                     for member in doc['viewOfMembership']:
@@ -145,14 +110,14 @@ class ServerSocket(threading.Thread):
                         print("Member port:", member_port)
                         print("Coordinator port:", self.port)
 
-                        if (member_port != self.port):
-                            client = client_socket.ClientSocket()
-                            # alive_status_msg = {'topic': 'PING'}
-                            updatedview = json.dumps({'topic':'MEMBERSHIP_UPDATE', 'message':{'viewOfMembership': doc['viewOfMembership']}}).encode('utf-8')
-                            print("-----",updatedview)
-                            isSuccessSend = client.sendMessage(port=member_port,
-                                                               message= updatedview)
-                            client.close()
+                        # if (member_port != self.port):
+                        client = client_socket.ClientSocket()
+                        # alive_status_msg = {'topic': 'PING'}
+                        updatedview = json.dumps({'topic':'MEMBERSHIP_UPDATE', 'message':{'viewOfMembership': doc['viewOfMembership']}}).encode('utf-8')
+                        print("-----",updatedview)
+                        isSuccessSend = client.sendMessage(port=member_port,
+                                                           message= updatedview)
+                        client.close()
                         print(isSuccessSend)
 
                         print(member)
@@ -165,36 +130,19 @@ class ServerSocket(threading.Thread):
 
                 # check type of message received and perform corressponding action
                 elif topic == 'MEMBERSHIP_UPDATE':
+                    # when the recieving port is not coordinator
 
-                    print("----1. Inside Membership update")
-                    # mem_view_msg = json.dumps({'topic': 'MEMBERSHIP_UPDATE', 'message'})
-                    # client = client_socket.ClientSocket()
-                    # client.sendMessage(port=args.coordinatorPort, message=mem_view_msg.encode('utf-8'));
                     print("2. Updated recieved:" ,recvd_msg['message'])
-                    # print("3. printing ", self.collection.find_one())
-                    # print("3.1 sub part:", self.collection.find_one({"viewOfMembership": {"address":client_addr}}))
-                    # doc1 = self.collection.find_one()
-                    # print ("4.", doc1['viewOfMembership'])
-                    # if doc is not None:
-                    #     self.collection.delete_one({"_id": doc["_id"]});
-                    doc1 = {'viewOfMembership':[{""}]}
+                    doc1 = {}
 
                     doc1['viewOfMembership'] = recvd_msg['message']['viewOfMembership']
                     print("3.", doc1)
+                    print("====this is port: ", self.port)
+                    self.collection.drop()
+                    dbConn = model.PyMongoModel()
+                    collection = dbConn.getCollection("process_" + str(self.port))
 
-                    utils.insertIfNotPresent(self.collection, doc1)
-                    # # client.close()
-
-                    # doc = self.collection.find_one()
-                    # if doc is None:
-                    #     doc = {}
-                    # print("*******Recieved View of membership:", recvd_msg['message']['viewOfMembership'])
-                    # doc['viewOfMembership'] = recvd_msg['message']['viewOfMembership']
-                    # print("*******Recieved View of membership:",doc['viewOfMembership'])
-                    # # print("My old view:",self.collection("process_"))
-                    #
-                    # utils.insertIfNotPresent(self.collection, doc['viewOfMembership'])
-                    # print("My new view:",self.collection)
+                    utils.insertIfNotPresent(collection, doc1)
 
 
                 elif topic == 'GIVE_MEMBERSHIP_VIEW':

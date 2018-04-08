@@ -67,13 +67,14 @@ if not args.isCoordinator:
         
         # If join request approved
         if(join_req_resp['topic'] == "APPROVED"):
-            collection = dbConn.getCollection("process_"+str(args.port))
-            doc = collection.find_one();
-            if doc is None:
-                doc = {}
-            doc['key'] = join_req_resp['key']
-            
-            utils.insertIfNotPresent(collection, doc)
+            # collection = dbConn.getCollection("process_"+str(args.port))
+            # doc = collection.find_one();
+            # if doc is None:
+            #     doc = {}
+            # doc['key'] = join_req_resp['key']
+            #
+            # utils.insertIfNotPresent(collection, doc)
+            print("Approved")
         else:
             print("Group join request declined by master. Suiciding. Bye!")
             sys.exit()
@@ -103,14 +104,17 @@ if not args.isCoordinator:
 
 
     while True:
+        time.sleep(5)
+        collection = dbConn.getCollection("process_" + str(args.port))
         j = 0
         doc = collection.find_one()
+        print("--=====++++:",doc)
 
         # Iterate over each member in the list and send a PING request to check
         # their alive status.
         # Update membership view accordingly
-        time.sleep(9)
-        print("\n\nPinging all nodes to update membership view...")
+
+        print("\n\nPinging all nodes to update check alive...")
         if doc is not None:
             for member in doc['viewOfMembership']:
                 member_port = member['address']
@@ -130,7 +134,7 @@ if not args.isCoordinator:
                     print(member)
                     client.close()
 
-        collection.update({'_id':doc['_id']},doc)
+                collection.update({'_id':doc['_id']},doc)
         time.sleep(5)
         
 # update the membership view
