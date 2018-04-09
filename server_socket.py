@@ -6,6 +6,7 @@ Created on Sat Mar 10 18:58:52 2018
 @author: amit
 """
 import constants
+import config
 import model
 import utils
 
@@ -45,7 +46,9 @@ class ServerSocket(threading.Thread):
     def run(self):
          # initiate listening
         self.initiateListening()
-        
+    def isCoordinator(self):
+        return self.port == config.port
+
     def initiateListening(self):
         while True:
             
@@ -69,7 +72,7 @@ class ServerSocket(threading.Thread):
                 
                 elif topic == 'PING':
                    clientsocket.send(json.dumps({'topic':'PONG'}).encode('utf-8'))
-                   
+
                 elif topic == 'JOIN_REQUEST':
                     client_addr = recvd_msg['address']
                      
@@ -131,19 +134,26 @@ class ServerSocket(threading.Thread):
                 # check type of message received and perform corressponding action
                 elif topic == 'MEMBERSHIP_UPDATE':
                     # when the recieving port is not coordinator
+                    if not self.isCoordinator():
+                        print("2. Updated recieved:" ,recvd_msg['message'])
+                        doc1 = {}
 
-                    print("2. Updated recieved:" ,recvd_msg['message'])
-                    doc1 = {}
+                        doc1['viewOfMembership'] = recvd_msg['message']['viewOfMembership']
+                        print("3.", doc1)
+                        print("====this is port: ", self.port)
+                        self.collection.drop()
+                        dbConn = model.PyMongoModel()
+                        collection = dbConn.getCollection("process_" + str(self.port))
 
-                    doc1['viewOfMembership'] = recvd_msg['message']['viewOfMembership']
-                    print("3.", doc1)
-                    print("====this is port: ", self.port)
-                    self.collection.drop()
-                    dbConn = model.PyMongoModel()
-                    collection = dbConn.getCollection("process_" + str(self.port))
-
-                    utils.insertIfNotPresent(collection, doc1)
-
+                        utils.insertIfNotPresent(collection, doc1)
+                    # membership_update from peers, which means failed connection
+                    else:
+                        print("reporting from peers about missing nodes")
+                        missing_node = recvd_msg['message']['missingNode']
+                        # get coordinator member view
+                        report = {'report': []}
+                        
+                        self.collection.insert_one(report)
 
                 elif topic == 'GIVE_MEMBERSHIP_VIEW':
                     # query for membership view
